@@ -114,9 +114,9 @@ void eeconfig_update_rgb_matrix_default(void) {
   dprintf("eeconfig_update_rgb_matrix_default\n");
   rgb_matrix_config.enable = 1;
   rgb_matrix_config.mode = RGB_MATRIX_STARTUP_MODE;
-  rgb_matrix_config.hue = 0;
-  rgb_matrix_config.sat = UINT8_MAX;
-  rgb_matrix_config.val = RGB_MATRIX_MAXIMUM_BRIGHTNESS;
+  rgb_matrix_config.hue = 80;
+  rgb_matrix_config.sat = 50;//40; //UINT8_MAX;
+  rgb_matrix_config.val = 160;//RGB_MATRIX_MAXIMUM_BRIGHTNESS;
   rgb_matrix_config.speed = UINT8_MAX / 2;
   eeconfig_update_rgb_matrix(rgb_matrix_config.raw);
 }
