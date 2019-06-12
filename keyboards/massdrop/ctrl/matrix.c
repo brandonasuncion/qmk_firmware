@@ -79,15 +79,19 @@ void matrix_init(void)
     matrix_init_quantum();
 }
 
-uint64_t mdebouncing = 0;
+// Implements debouncing method found in other QMK firmwares
+// https://github.com/qmk/qmk_firmware/blob/master/keyboards/planck/rev6/matrix.c
+// https://github.com/qmk/qmk_firmware/blob/master/keyboards/preonic/rev3/matrix.c
+// https://github.com/qmk/qmk_firmware/blob/master/keyboards/clueboard/66_hotswap/gen1/matrix.c
+
+static bool debouncing = false;
+uint64_t debouncing_time = 0;
+
 uint8_t matrix_scan(void)
 {
-    uint8_t mchanged;
     uint8_t row;
     uint8_t col;
     uint32_t scans[2]; //PA PB
-
-    if (timer_read64() < mdebouncing) return 1; //mdebouncing == 0 when no debouncing active
 
     memset(mlatest, 0, MATRIX_ROWS * sizeof(matrix_row_t)); //Zero the result buffer
 
@@ -95,7 +99,7 @@ uint8_t matrix_scan(void)
     {
         PORT->Group[col_ports[col]].OUTSET.reg = 1 << col_pins[col]; //Set col output
 
-        wait_us(1); //Delay for output
+        wait_us(20); //Delay for output
 
         scans[PA] = PORT->Group[PA].IN.reg & row_masks[PA]; //Read PA row pins data
         scans[PB] = PORT->Group[PB].IN.reg & row_masks[PB]; //Read PB row pins data
@@ -108,27 +112,22 @@ uint8_t matrix_scan(void)
             if (scans[row_ports[row]] & (1 << row_pins[row]))
                 mlatest[row] |= 1 << col;
         }
+
     }
 
-    mchanged = 0; //Default to no matrix change since last
+    for (row = 0; row < MATRIX_ROWS; row++) {
+        if (mlast[row] != mlatest[row]) {
 
-    for (row = 0; row < MATRIX_ROWS; row++)
-    {
-        if (mlast[row] != mlatest[row])
-            mchanged = 1;
-        mlast[row] = mlatest[row];
+            mlast[row] = mlatest[row];
+            debouncing = true;
+            debouncing_time = timer_read64() + DEBOUNCING_DELAY;
+        }
     }
 
-    if (!mchanged)
-    {
+    if (debouncing && timer_read64() > debouncing_time) {
         for (row = 0; row < MATRIX_ROWS; row++)
-            mdebounced[row] = mlatest[row];
-        mdebouncing = 0;
-    }
-    else
-    {
-        //Begin or extend debounce on change
-        mdebouncing = timer_read64() + DEBOUNCING_DELAY;
+            mdebounced[row] = mlast[row];
+        debouncing = false;
     }
 
     matrix_scan_quantum();
