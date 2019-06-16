@@ -120,7 +120,7 @@ uint8_t matrix_scan(void)
 
             mlast[row] = mlatest[row];
             debouncing = true;
-            debouncing_time = timer_read64() + DEBOUNCING_DELAY;
+            debouncing_time = timer_read64() + DEBOUNCE;
         }
     }
 

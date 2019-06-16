@@ -3,6 +3,14 @@
 //#include "rgb_matrix_animations/alpha_mods_anim.h"
 //#include "rgb_matrix_animations/gradient_up_down_anim.h"
 #include "rgb_matrix_animations/breathing_anim.h"
+
+#include "rgb_matrix_animations/colorband_sat_anim.h"
+#include "rgb_matrix_animations/colorband_val_anim.h"
+#include "rgb_matrix_animations/colorband_pinwheel_sat_anim.h"
+#include "rgb_matrix_animations/colorband_pinwheel_val_anim.h"
+#include "rgb_matrix_animations/colorband_spiral_sat_anim.h"
+#include "rgb_matrix_animations/colorband_spiral_val_anim.h"
+
 //#include "rgb_matrix_animations/cycle_all_anim.h"
 #include "rgb_matrix_animations/cycle_left_right_anim.h"
 #include "rgb_matrix_animations/cycle_up_down_anim.h"
@@ -12,6 +20,7 @@
 //#include "rgb_matrix_animations/dual_beacon_anim.h"
 //#include "rgb_matrix_animations/rainbow_beacon_anim.h"
 //#include "rgb_matrix_animations/rainbow_pinwheels_anim.h"
+
 #include "rgb_matrix_animations/raindrops_anim.h"
 #include "rgb_matrix_animations/jellybean_raindrops_anim.h"
 //#include "rgb_matrix_animations/typing_heatmap_anim.h"
