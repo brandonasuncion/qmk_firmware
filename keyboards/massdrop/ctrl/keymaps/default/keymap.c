@@ -1,6 +1,11 @@
 #include QMK_KEYBOARD_H
 
-#define KEKEKE  UC(0x314B)
+// Time of inactivity before backlight shuts off automatically
+#define BACKLIGHT_SLEEP_DELAY  600000       // 10 minutes
+
+// See for macros: https://beta.docs.qmk.fm/features/feature_macros
+
+#define KEKEKE  UC(0x314B) // ㅋ
 
 enum ctrl_keycodes {
     U_T_AUTO = SAFE_RANGE, //USB Extra Port Toggle Auto Detect / Always Active
@@ -10,6 +15,10 @@ enum ctrl_keycodes {
     DBG_KBD,               //DEBUG Toggle Keyboard Prints
     DBG_MOU,               //DEBUG Toggle Mouse Prints
     MD_BOOT,               //Restart into bootloader after hold timeout
+
+    WIDEPH,                // widepeepoHappy
+    WIDEPS,                // widepeepoSad
+    BRAINP,                // O-oooooooooo AAAAE-A-A-I-A-U- JO-oooooooooooo AAE-O-A-A-U-U-A- E-eee-ee-eee AAAAE-A-E-I-E-A-JO-ooo-oo-oo-oo EEEEO-A-AAA-AAAA
 };
 
 #define TG_NKRO MAGIC_TOGGLE_NKRO //Toggle 6KRO / NKRO mode
@@ -23,14 +32,22 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_LBRC, KC_RBRC, KC_BSLS,   KC_DEL,  KC_END,  KC_PGDN, \
         KC_CAPS, KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT, KC_ENT, \
         KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,                              KC_UP, \
-        KC_LCTL, KC_LGUI, KC_LALT,                   KC_SPC,                             KC_RALT, MO(1),   KC_APP,  KC_RCTL,            KC_LEFT, KC_DOWN, KC_RGHT \
-    ),
+        KC_LCTL, KC_LGUI, KC_LALT,                   KC_SPC,                             KC_RALT, MO(1),   MO(2),   KC_RCTL,            KC_LEFT, KC_DOWN, KC_RGHT \
+    ),// MO(2) originally KC_APP
     [1] = LAYOUT(
         RESET,   _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,            KC_MUTE, _______, _______, \
         _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,   KC_MPLY, KC_MSTP, KC_VOLU, \
         _______, RGB_SPD, RGB_VAI, RGB_SPI, RGB_HUI, RGB_SAI, _______, U_T_AUTO,U_T_AGCR,_______, _______, _______, _______, _______,   KC_MPRV, KC_MNXT, KC_VOLD, \
-        _______, RGB_RMOD,RGB_VAD, RGB_MOD, RGB_HUD, RGB_SAD, _______, _______, KEKEKE, _______, _______, _______, _______, \
+        _______, RGB_RMOD,RGB_VAD, RGB_MOD, RGB_HUD, RGB_SAD, _______, _______, KEKEKE,  _______, _______, _______, _______, \
         _______, RGB_TOG, _______, _______, _______, MD_BOOT, TG_NKRO, _______, _______, _______, _______, _______,                              _______, \
+        _______, _______, _______,                   _______,                            _______, _______, _______, _______,            _______, _______, _______ \
+    ),
+    [2] = LAYOUT(
+        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,            _______, _______, _______, \
+        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,   _______, _______, KC_VOLU, \
+        _______, _______, WIDEPH,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,   _______, _______, KC_VOLD, \
+        _______, _______, WIDEPS,  _______, _______, _______, _______, _______, KEKEKE,  _______, _______, _______, _______, \
+        _______, _______, _______, _______, _______, BRAINP,  _______, _______, _______, _______, _______, _______,                              _______, \
         _______, _______, _______,                   _______,                            _______, _______, _______, _______,            _______, _______, _______ \
     ),
     /*
@@ -45,12 +62,33 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     */
 };
 
+static uint32_t lastInputTime;
+static bool isAsleep = false;
+static uint8_t prevRGBMatrixEnableFlag;
+
 // Runs just one time when the keyboard initializes.
 void matrix_init_user(void) {
+    lastInputTime = timer_read32();
 };
 
 // Runs constantly in the background, in a loop.
 void matrix_scan_user(void) {
+
+    // Automatically shut off LEDs when idle
+    bool shouldBeAsleep = timer_elapsed32(lastInputTime) >= BACKLIGHT_SLEEP_DELAY;
+    if (shouldBeAsleep != isAsleep) {
+        isAsleep = shouldBeAsleep;
+
+        if (shouldBeAsleep) {
+            // Save LED state and disable RGB matrix if needed
+            prevRGBMatrixEnableFlag = rgb_matrix_config.enable;
+            rgb_matrix_disable_noeeprom();
+
+        } else if (prevRGBMatrixEnableFlag) {
+            // Re-enable if it was previously enabled
+            rgb_matrix_enable_noeeprom();
+        }
+    }
 };
 
 #define MODS_SHIFT  (get_mods() & MOD_BIT(KC_LSHIFT) || get_mods() & MOD_BIT(KC_RSHIFT))
@@ -59,6 +97,10 @@ void matrix_scan_user(void) {
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     static uint32_t key_timer;
+
+    if (record->event.pressed) {
+        lastInputTime = timer_read32();
+    }
 
     switch (keycode) {
         case U_T_AUTO:
@@ -126,7 +168,36 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
               }
             }
             return false;
+        case WIDEPH:
+            if (record->event.pressed) {
+                SEND_STRING("widepeepoHappy ");
+            }
+            return false;
+        case WIDEPS:
+            if (record->event.pressed) {
+                SEND_STRING("widepeepoSad ");
+            }
+            return false;
+        case BRAINP:
+            if (record->event.pressed) {
+                SEND_STRING("O-oooooooooo AAAAE-A-A-I-A-U- JO-oooooooooooo AAE-O-A-A-U-U-A- E-eee-ee-eee AAAAE-A-E-I-E-A-JO-ooo-oo-oo-oo EEEEO-A-AAA-AAAA");
+            }
+            return false;
         default:
             return true; //Process all other keycodes normally
     }
 }
+
+
+// uint32_t layer_state_set_user(uint32_t state) {
+//     uint8_t layer = biton32(layer_state);
+
+//     switch (layer) {
+//     case 0:
+//         break;
+//     case 1:
+//         break;
+//     }
+
+//     return state;
+// }
